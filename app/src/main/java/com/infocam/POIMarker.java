@@ -19,24 +19,23 @@
 
 package com.infocam;
 
-import java.text.DecimalFormat;
+import android.graphics.Color;
+import android.graphics.Path;
+import android.location.Location;
 
-import com.infocam.LocalMarker;
 import com.infocam.lib.MixUtils;
 import com.infocam.lib.gui.PaintScreen;
 import com.infocam.lib.gui.TextObj;
 
-import android.graphics.Color;
-import android.graphics.Path;
-import android.location.Location;
+import java.text.DecimalFormat;
 
 /**
  * This markers represent the points of interest.
  * On the screen they appear as circles, since this
  * class inherits the draw method of the Marker.
- * 
+ *
  * @author hannes
- * 
+ *
  */
 public class POIMarker extends LocalMarker {
 
@@ -44,7 +43,7 @@ public class POIMarker extends LocalMarker {
 	public static final int OSM_URL_MAX_OBJECTS = 5;
 
 	public POIMarker(String id, String title, double latitude, double longitude,
-			double altitude, String URL, int type, int color) {
+					 double altitude, String URL, int type, int color) {
 		super(id, title, latitude, longitude, altitude, URL, type, color);
 
 	}
@@ -75,7 +74,7 @@ public class POIMarker extends LocalMarker {
 				/*double radius = Math.max(
 						Math.min(angle / 0.44 * maxHeight, maxHeight),
 						maxHeight / 25f);*/
-				double radius = 15;
+		double radius = 15;
 
 			/*
 			 * distance 100 is the threshold to convert from circle to another
@@ -103,7 +102,10 @@ public class POIMarker extends LocalMarker {
 
 			double d = distance;
 			DecimalFormat df = new DecimalFormat("@#");
-			if (d < 1000.0) {
+			if (d < 200) {
+				textStr =  title;
+			}
+			else if (d < 1000.0) {
 				textStr = title + " (" + df.format(d) + "m)";
 			} else {
 				d = d / 1000.0;
@@ -111,17 +113,19 @@ public class POIMarker extends LocalMarker {
 			}
 
 			textBlock = new TextObj(textStr, Math.round(maxHeight / 2f) + 1, 250,
-					dw, underline);
+					dw, false);
 
 			if (isVisible) {
 				// based on the distance set the colour
-				if (distance < 100.0) {
-					textBlock.setBgColor(Color.argb(128, 52, 52, 52));
-					textBlock.setBorderColor(Color.rgb(255, 104, 91));
-				} else {
-					textBlock.setBgColor(Color.argb(128, 0, 0, 0));
-					textBlock.setBorderColor(Color.rgb(255, 255, 255));
-				}
+//				if (distance < 100.0) {
+//					textBlock.setBgColor(Color.argb(128, 52, 52, 52));
+//					textBlock.setBorderColor(Color.rgb(255, 104, 91));
+//				} else {
+//					textBlock.setBgColor(Color.argb(128, 0, 0, 0));
+//					textBlock.setBorderColor(Color.rgb(255, 255, 255));
+//				}
+				textBlock.setBgColor(Color.argb(110, 63, 81, 181));
+				textBlock.setBorderColor(Color.rgb(255, 255, 255));
 				//dw.setColor(DataSource.getColor(type));
 
 				float currentAngle = MixUtils.getAngle(cMarker.x, cMarker.y,
@@ -130,7 +134,7 @@ public class POIMarker extends LocalMarker {
 				dw.setStrokeWidth(1f);
 				dw.setFill(true);
 				dw.paintObj(txtLab, signMarker.x - txtLab.getWidth() / 2,
-						signMarker.y + maxHeight, currentAngle + 90, 1);
+						signMarker.y + maxHeight, currentAngle, 1);
 				/*dw.paintObj(txtLab, signMarker.x,
 						signMarker.y, currentAngle, 1);*/
 
@@ -160,8 +164,9 @@ public class POIMarker extends LocalMarker {
 		tri.lineTo(x + radius, y - radius);
 
 		tri.close();
+
 		dw.paintPath(tri, cMarker.x, cMarker.y, radius * 2, radius * 2,
-				currentAngle + 90, 1);
+				currentAngle+90, 1);
 	}
 
 }

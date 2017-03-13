@@ -21,8 +21,6 @@ public class Main extends Activity {
     Button changepas;
 
 
-
-
     /**
      * Called when the activity is first created.
      */

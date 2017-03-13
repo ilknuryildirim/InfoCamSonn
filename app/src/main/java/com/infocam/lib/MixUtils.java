@@ -18,8 +18,6 @@
  */
 package com.infocam.lib;
 
-import android.util.FloatMath;
-
 /**
  * This class has the ability to calculate the declination of a line between two
  * points. It is able to check if a point is in a given rectangle and it also can
@@ -32,13 +30,23 @@ public class MixUtils {
 	}
 
 	public static String formatDist(float meters) {
-		if (meters < 1000) {
+		/*if (meters < 1000) {
+			return ((int) meters) + "m";
+		} else if (meters < 10000) {
+			return formatDec(meters / 1000f, 1) + "km";
+		} else {
+			return ((int) (meters / 1000f)) + "km";
+		}*/
+		if (meters < 200) {
+			return "";
+		} else if (meters < 1000) {
 			return ((int) meters) + "m";
 		} else if (meters < 10000) {
 			return formatDec(meters / 1000f, 1) + "km";
 		} else {
 			return ((int) (meters / 1000f)) + "km";
 		}
+
 	}
 
 	static String formatDec(float val, int dec) {
@@ -64,7 +72,7 @@ public class MixUtils {
 		float angle = (float) Math.toDegrees(Math.acos(cos));
 
 		angle = (tmpv_y < 0) ? angle * -1 : angle;
-
+		angle = 0;
 		return angle;
 	}
 }

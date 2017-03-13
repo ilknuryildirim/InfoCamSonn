@@ -9,7 +9,7 @@
     </corners>
 
     <!--<solid android:color="#494848" />-->
-    <solid android:color="#008080" />
+    <solid android:color="#3F51B5" />
 
     <!--<gradient-->
         <!--android:angle="90"-->

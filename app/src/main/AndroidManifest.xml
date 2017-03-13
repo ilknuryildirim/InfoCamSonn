@@ -23,14 +23,15 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/applogo4"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <uses-library android:name="com.google.android.maps" />
         <activity
             android:name="com.infocam.Login"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -48,8 +49,13 @@
         </activity>
 
 
-        <activity android:label="@string/app_name" android:name="com.infocam.Register">
+        <activity android:label="@string/app_name"
+                    android:name="com.infocam.Register"
+                    android:parentActivityName="com.infocam.Login">
 
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.infocam.Login" />
         </activity>
 
         <activity android:label="@string/app_name" android:name="com.infocam.Registered">
@@ -60,19 +66,13 @@
 
         </activity>
 
-        <activity android:label="@string/app_name" android:name="com.infocam.PasswordReset">
-
+        <activity android:label="@string/app_name" android:name="com.infocam.PasswordReset" android:parentActivityName="com.infocam.Login">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.infocam.Login" />
         </activity>
 
 
-
-
-        <activity
-            android:name="com.infocam.MainActivity"
-            android:label="MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-
-        </activity>
         <activity
             android:name=".ChangePassword"
             android:label="@string/title_activity_7"
@@ -88,9 +88,12 @@
             android:label="@string/title_activity_2"
             android:parentActivityName="com.infocam.MixView"
             android:theme="@style/AppTheme.NoActionBar">
+
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.infocam.MixView" />
+
+
 
         </activity>
         <activity
@@ -145,6 +148,16 @@
 
         </activity>
         <activity
+            android:name=".FriendGalleryActivity"
+            android:label="Friend Gallery"
+            android:parentActivityName="com.infocam.MixView"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.infocam.MixView" />
+
+        </activity>
+        <activity
             android:name=".RequestActivity"
             android:label="Friend Requests"
             android:parentActivityName="com.infocam.MixView"
@@ -175,6 +188,26 @@
 
 
         </activity>
+        <activity
+            android:name=".BuildingInfoActivity"
+            android:label="Building Information"
+            android:parentActivityName="com.infocam.MixView"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.infocam.MixView" />
+
+
+        </activity>
+
+        <activity android:label="Take Photo" android:name=".CameraActivity"
+            android:screenOrientation="landscape"
+            android:launchMode="singleTop" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.infocam.MixView" /> />
+        </activity>
+
     </application>
 
 </manifest>

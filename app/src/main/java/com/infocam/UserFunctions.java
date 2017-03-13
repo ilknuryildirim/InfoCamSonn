@@ -1,6 +1,7 @@
 package com.infocam;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -15,7 +16,8 @@ public class UserFunctions {
     private JSONParser jsonParser;
 
     //URL of the PHP API/aaa
-    private static String URL = "http://139.179.207.190/infocam_server/";
+    private static String URL = "http://139.179.207.228/infocam_server/";
+    //private static String URL = "http://192.168.2.229/infocam_server/";
 
     private static String login_tag = "login";
     private static String register_tag = "register";
@@ -33,6 +35,15 @@ public class UserFunctions {
     private static String getMyPics = "getMyPics";
     private static String updateProfilePicture = "updateProfilePicture";
     private static String getProfilePic = "getProfilePic";
+    private static String getAllBuildings = "getAllBuildings";
+    private static String getBuildingInfo = "getBuildingInfo";
+    private static String getBuildingPic = "getBuildingPic";
+    private static String updateRating = "updateRating";
+    private static String getBuildingPhotos = "getBuildingPhotos";
+    private static String getRating = "getRating";
+    private static String getFriendPictures = "getFriendPictures";
+    private static String getComment = "getComment";
+    private static String addComment = "addComment";
 
 
     // constructor
@@ -41,12 +52,9 @@ public class UserFunctions {
 
     }
 
-
-
     /**
      * Function to send friend request to other user
      **/
-
     public JSONObject addFriend(String from, String to){
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -59,7 +67,6 @@ public class UserFunctions {
     /**
      * Function to accept friend request
      **/
-
     public JSONObject acceptFriend(String owner, String sender){
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -72,7 +79,6 @@ public class UserFunctions {
     /**
      * Function to reject friend request
      **/
-
     public JSONObject rejectFriend(String owner, String sender){
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -86,7 +92,6 @@ public class UserFunctions {
      *
      * Function to get REQUESTS
      **/
-
     public JSONObject getRequests(String userID){
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -98,10 +103,10 @@ public class UserFunctions {
     /**
      * Function to get all users
      **/
-
     public JSONObject getAllUsers(String userID){
 
 
+        Log.v("GETFRIENDSSSSSSSSS","I AM IN 4");
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("tag", getUsers));
@@ -113,7 +118,6 @@ public class UserFunctions {
     /**
      * Function to get user's friends
      **/
-
     public JSONObject getMyFriends(String userID){
 
 
@@ -127,7 +131,6 @@ public class UserFunctions {
     /**
      * Function to get user's friends
      **/
-
     public JSONObject getFriend(String friendID){
 
 
@@ -141,7 +144,6 @@ public class UserFunctions {
     /**
      * Function to Login
      **/
-
     public JSONObject loginUser(String username, String password){
         // Building Parameters
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -151,11 +153,9 @@ public class UserFunctions {
         JSONObject json = jsonParser.getJSONFromUrl(URL, params);
         return json;
     }
-
     /**
      * Function to change password
      **/
-
     public JSONObject chgPass(String newpas, String email){
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("tag", chgpass_tag));
@@ -165,12 +165,9 @@ public class UserFunctions {
         JSONObject json = jsonParser.getJSONFromUrl(URL, params);
         return json;
     }
-
-
     /**
      * Function to reset the password
      **/
-
     public JSONObject forPass(String forgotpassword){
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("tag", forpass_tag));
@@ -178,9 +175,6 @@ public class UserFunctions {
         JSONObject json = jsonParser.getJSONFromUrl(URL, params);
         return json;
     }
-
-
-
     /**
      * Function to  Register
      **/
@@ -229,7 +223,21 @@ public class UserFunctions {
 
         return json;
     }
+    public JSONObject getFriendPictures(String friendID){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",getFriendPictures));
+        params.add(new BasicNameValuePair("friendID", friendID));
 
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
+    }
+    public JSONObject getBuildingPhotos(){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag", getBuildingPhotos));
+        JSONObject json1 = jsonParser.getJSONFromUrl(URL, params);
+        return json1;
+    }
 
     public JSONObject updateProfilePicture(String name, String encodedImage ,String userID){
         List<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -245,12 +253,90 @@ public class UserFunctions {
     public JSONObject getProfilePic(String username){
         List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("tag",getProfilePic));
-        params.add(new BasicNameValuePair("username", username));
+        params.add(new BasicNameValuePair("UID", username));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+        Log.v("getprofilepicture 3", json.toString());
+        return json;
+
+    }
+
+    public JSONObject getAllBuildings(){
+        JSONParser jsonParserr = new JSONParser();
+        // Building Parameters
+
+        Log.v("buildings tag", getAllBuildings);
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag", getAllBuildings));
+
+        JSONObject json = jsonParserr.getJSONFromUrl(URL, params);
+
+        Log.v("buildings json", jsonParserr.getJSONFromUrl(URL, params).toString());
+
+        return json;
+    }
+    public JSONObject getBuildingPic(String title){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",getBuildingPic));
+        params.add(new BasicNameValuePair("title", title));
 
         JSONObject json = jsonParser.getJSONFromUrl(URL, params);
 
         return json;
+    }
 
+    public JSONObject getBuildingInfo(String url){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",getBuildingInfo));
+        params.add(new BasicNameValuePair("url", url));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
+    }
+
+    public JSONObject updateRating(float rate, String infoID, String userID){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",updateRating));
+        params.add(new BasicNameValuePair("rate", String.valueOf(rate)));
+        params.add(new BasicNameValuePair("infoID", infoID));
+        params.add(new BasicNameValuePair("userID", userID));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
+    }
+
+    public JSONObject getRating(String userID, String infoID){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",getRating));
+        params.add(new BasicNameValuePair("userID", userID));
+        params.add(new BasicNameValuePair("infoID", infoID));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
+    }
+
+    public JSONObject addComment(String userID, String text, String infoID){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",addComment));
+        params.add(new BasicNameValuePair("userID", userID));
+        params.add(new BasicNameValuePair("text", text));
+        params.add(new BasicNameValuePair("infoID", infoID));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
+    }
+    public JSONObject getComment(String infoID){
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("tag",getComment));
+        params.add(new BasicNameValuePair("infoID", infoID));
+
+        JSONObject json = jsonParser.getJSONFromUrl(URL, params);
+
+        return json;
     }
     /**
      * Function to logout user

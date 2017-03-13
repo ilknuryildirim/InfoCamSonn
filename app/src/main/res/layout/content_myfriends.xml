@@ -26,13 +26,13 @@
     <EditText android:id="@+id/searchFriend"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="Search products.."
+        android:hint="Search friends.."
         android:inputType="textVisiblePassword"/>
 
     <ListView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/listview"
+        android:id="@+id/listview_myf"
         android:layout_below="@+id/searchFriend"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true">

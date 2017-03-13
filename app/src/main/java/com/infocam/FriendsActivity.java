@@ -3,15 +3,18 @@ package com.infocam;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -39,6 +42,8 @@ import java.util.List;
 public class FriendsActivity extends BaseActivity {
 
     private ArrayList<String> data = new ArrayList<String>();
+
+    private ArrayList<Bitmap> images = new ArrayList<Bitmap>();
     private ArrayList<String> userIDs = new ArrayList<>();
     HashMap<String,String> friends = new HashMap<String, String>();
 
@@ -59,6 +64,7 @@ public class FriendsActivity extends BaseActivity {
         //Create a listview to show users
         usersList=(ListView) findViewById(R.id.listview);
         searchFriend 	= 	(EditText) findViewById(R.id.searchFriend);
+
         // get the user list
 
 
@@ -73,7 +79,7 @@ public class FriendsActivity extends BaseActivity {
         NetAsync2("GetFriends", "a");
 
         //Set nav drawer selected to second item in list
-        mNavigationView.getMenu().getItem(1).setChecked(true);
+        mNavigationView.getMenu().getItem(2).setChecked(true);
 
 
         // Enabling Search Functionality
@@ -105,24 +111,11 @@ public class FriendsActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        // getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
 
     private class MyListAdaper extends ArrayAdapter<String> {
@@ -158,6 +151,8 @@ public class FriendsActivity extends BaseActivity {
             });
             mainViewholder.title.setText(getItem(position));
             mainViewholder.button.setTag(getItem(position));
+            if(images.get(position)!=null)
+                mainViewholder.thumbnail.setImageBitmap(images.get(position));
 
             return convertView;
         }
@@ -228,6 +223,7 @@ public class FriendsActivity extends BaseActivity {
             if(th == true){
                 nDialog.dismiss();
                 if(myTask.equals("GetFriends")){
+                    Log.v("GETFRIENDSSSSSSSSS","I AM IN");
                     new ProcessGetFriends().execute();
                 } else {
                     new AddFriends(friendID).execute();
@@ -271,7 +267,11 @@ public class FriendsActivity extends BaseActivity {
             HashMap<String,String> user = new HashMap<String, String>();
             user = db.getUserDetails();
             String userID = user.get("uid");
+
+            Log.v("GETFRIENDSSSSSSSSS","I AM IN 2");
             JSONObject json = userFunction.getAllUsers(userID);
+
+            Log.v("GETFRIENDSSSSSSSSS","I AM IN 3");
             System.out.println("my json = " + json.toString());
             return json;
         }
@@ -298,6 +298,19 @@ public class FriendsActivity extends BaseActivity {
                         data.add(tmp);
                         userIDs.add(uid);
                         friends.put(tmp,uid);
+
+                        String name = jsonobject.getString("name");
+
+                        String hasimage = jsonobject.getString("hasimage");
+                        if(Integer.parseInt(hasimage)==1){
+                            String image = jsonobject.getString("image");
+                            byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
+                            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                            images.add(i,decodedByte);
+
+                        }else {
+                            images.add(i,null);
+                        }
                     }
                     UserListAdapter.addAll(data);
 
@@ -342,9 +355,7 @@ public class FriendsActivity extends BaseActivity {
             HashMap<String,String> user = new HashMap<String, String>();
             user = db.getUserDetails();
             String fromID = user.get("uid");
-            System.out.println("add friend - doInBackground - ilknur " + fromID + " - " + toID);
             JSONObject json = userFunction.addFriend(fromID, toID);
-            System.out.println("json add friend = " + json.toString());
             return json;
         }
 
@@ -354,8 +365,6 @@ public class FriendsActivity extends BaseActivity {
                 if (json.getString(KEY_SUCCESS) != null) {
 
                     String res = json.getString(KEY_SUCCESS);
-                    System.out.println("add friend success : "+ res);
-
                     pDialog.dismiss();
                     Intent intent = getIntent();
                     finish();

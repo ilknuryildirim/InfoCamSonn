@@ -13,14 +13,16 @@
     tools:showIn="@layout/activity_gallery"
     android:id="@+id/container">
 
-    <EditText android:id="@+id/searchImage"
+    <SearchView android:id="@+id/searchImage1"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:hint="Search images.."
         android:inputType="textVisiblePassword"/>
 
+    
+
     <GridView
-        android:id="@+id/imageview"
+        android:id="@+id/imageview1"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_margin="5dp"
@@ -32,10 +34,10 @@
         android:verticalSpacing="5dp"
         android:focusable="true"
         android:clickable="true"
-        android:layout_below="@+id/searchImage"/>
+        android:layout_below="@+id/searchImage1"/>
 
     <ImageView
-        android:id = "@+id/expanded_image"
+        android:id = "@+id/expanded_image1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="invisible"/>

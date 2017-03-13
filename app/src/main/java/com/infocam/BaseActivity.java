@@ -129,6 +129,36 @@ public abstract class BaseActivity extends AppCompatActivity
         mNavigationView.setNavigationItemSelectedListener(this);
 
     }
+    public void setupNavDrawer2() {
+
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (mDrawerLayout == null) {
+            return;
+        }
+
+
+        // use the hamburger menu
+        if( useDrawerToggle()) {
+            mToggle = new ActionBarDrawerToggle(
+                    this, mDrawerLayout,
+                    R.string.navigation_drawer_open,
+                    R.string.navigation_drawer_close);
+            mDrawerLayout.setDrawerListener(mToggle);
+            mToggle.syncState();
+        }
+        else if(useToolbar() && getSupportActionBar() != null) {
+            // Use home/back button instead
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeAsUpIndicator(ContextCompat
+                    .getDrawable(this, R.drawable.abc_ic_ab_back_mtrl_am_alpha));
+        }
+
+
+        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView.setNavigationItemSelectedListener(this);
+
+    }
 
 
 
@@ -152,30 +182,34 @@ public abstract class BaseActivity extends AppCompatActivity
         int id = item.getItemId();
 
         switch (id) {
+            case R.id.nav_photo:
+                onPause();
+                createBackStack(new Intent(this, CameraActivity.class));
+                break;
             case R.id.nav_main:
                 createBackStack(new Intent(this, MixView.class));
                 break;
-
+                
             case R.id.nav_friends:
                 createBackStack(new Intent(this, FriendsActivity.class));
                 break;
-
+                
             case R.id.nav_profile:
                 createBackStack(new Intent(this, ProfileActivity.class));
                 break;
-
+                
             case R.id.nav_gallery:
                 createBackStack(new Intent(this, GalleryActivity.class));
                 break;
-
+                
             case R.id.nav_buildinglist:
                 createBackStack(new Intent(this, BuildingListActivity.class));
                 break;
-
+                
             case R.id.nav_settings:
                 createBackStack(new Intent(this, SettingActivity.class));
                 break;
-
+                
             case R.id.nav_logout:
                 logout();
                 break;

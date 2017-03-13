@@ -6,6 +6,14 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:itemBackground">@color/grey_0</item>
+        <item name="android:actionMenuTextColor">@color/grey_0</item>
+        <item name="android:itemTextAppearance">@style/myCustomMenuTextApearance</item>
+
+    </style>
+    <style name="myCustomMenuTextApearance" parent="@android:style/TextAppearance.Widget.IconMenu.Item">
+        <item name="android:textColor">@color/grey_0</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -20,5 +28,7 @@
     <style name="MyDarkToolbarStyle" parent="Widget.AppCompat.Toolbar">
         <item name="popupTheme">@style/ThemeOverlay.AppCompat.Light</item>
         <item name="theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+
+
     </style>
 </resources>

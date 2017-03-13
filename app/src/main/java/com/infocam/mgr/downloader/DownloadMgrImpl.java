@@ -96,11 +96,12 @@ class DownloadMgrImpl implements Runnable, DownloadManager {
 			if (!request.getSource().isWellFormed()) {
 				throw new Exception("Datasource in not WellFormed");
 			}
-
+			Log.v("pppppp", "getPagecontent çağrıldı");
 			String pageContent = HttpTools.getPageContent(request,
 					ctx.getContentResolver());
 
 			if (pageContent != null) {
+				Log.v("ttttttt", pageContent);
 				// try loading Marker data
 				List<Marker> markers = DataConvertor.getInstance().load(
 						request.getSource().getUrl(), pageContent,

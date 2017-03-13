@@ -18,18 +18,9 @@
  */
 package com.infocam;
 
-import static android.view.KeyEvent.KEYCODE_CAMERA;
-import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
-import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
-import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
-import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
-import static android.view.KeyEvent.KEYCODE_DPAD_UP;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import android.graphics.Color;
+import android.location.Location;
+import android.util.Log;
 
 import com.infocam.data.DataHandler;
 import com.infocam.data.DataSource;
@@ -43,16 +34,24 @@ import com.infocam.mgr.downloader.DownloadManager;
 import com.infocam.mgr.downloader.DownloadRequest;
 import com.infocam.mgr.downloader.DownloadResult;
 
-import android.graphics.Color;
-import android.location.Location;
-import android.util.Log;
-import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import static android.view.KeyEvent.KEYCODE_CAMERA;
+import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
+import static android.view.KeyEvent.KEYCODE_DPAD_DOWN;
+import static android.view.KeyEvent.KEYCODE_DPAD_LEFT;
+import static android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
+import static android.view.KeyEvent.KEYCODE_DPAD_UP;
 
 /**
  * This class is able to update the markers and the radar. It also handles some
  * user events
  *
- * 
+ *
  */
 public class DataView {
 
@@ -79,11 +78,11 @@ public class DataView {
 
 	private Location curFix;
 	private DataHandler dataHandler = new DataHandler();
-	private float radius = 1;
+	private float radius = 5;
 
 	/** timer to refresh the browser */
 	private Timer refresh = null;
-	private final long refreshDelay = 3*1000; // refresh every 45 seconds
+	private final long refreshDelay = 3*1000; // refresh every 3 seconds
 
 	private boolean isLauncherStarted;
 
@@ -94,12 +93,15 @@ public class DataView {
 	private ScreenLine rrl = new ScreenLine();
 	private float rx = 10, ry = 20;
 	private float addX = 0, addY = 0;
-	
-	private List<Marker> markers;
+
+	public static List<Marker> markers;
 
 	/**
 	 * Constructor
 	 */
+	public DataView(){
+
+	}
 	public DataView(MixContext ctx) {
 		this.mixContext = ctx;
 	}
@@ -155,6 +157,7 @@ public class DataView {
 			height = heightInit;
 
 			cam = new Camera(width, height, true);
+
 			cam.setViewAngle(Camera.DEFAULT_VIEW_ANGLE);
 
 			lrl.set(0, -RadarPoints.RADIUS);
@@ -178,7 +181,7 @@ public class DataView {
 				request.getSource());
 		mixContext.getDownloadManager().submitJob(request);
 		state.nextLStatus = MixState.PROCESSING;
-		}
+	}
 
 
 	/*public void requestData(DataSource datasource, double lat, double lon, double alt, float radius, String locale) {
@@ -192,7 +195,7 @@ public class DataView {
 		mixContext.getRM(cam.transform);
 		curFix = mixContext.getLocationFinder().getCurrentLocation();
 		Log.i("takip", "dataview.draw 1");
-
+		//mixContext.getActualMixView().takeScreenshot();
 		state.calcPitchBearing(cam.transform);
 
 		// Load Layer
@@ -220,9 +223,9 @@ public class DataView {
 				if (dm.isDone()) {
 					retry = 0;
 					state.nextLStatus = MixState.DONE;
-					Marker m = markers.get(0);
+					/*Marker m = markers.get(0);
 					markers.clear();
-					markers.add(m);
+					markers.add(m);*/
 					dataHandler = new DataHandler();
 					dataHandler.addMarkers(markers);
 					if(markers.size() == 0)
@@ -279,12 +282,12 @@ public class DataView {
 		}
 		if (evt != null) {
 			switch (evt.type) {
-			case UIEvent.KEY:
-				handleKeyEvent((KeyEvent) evt);
-				break;
-			case UIEvent.CLICK:
-				handleClickEvent((ClickEvent) evt);
-				break;
+				case UIEvent.KEY:
+					handleKeyEvent((KeyEvent) evt);
+					break;
+				case UIEvent.CLICK:
+					handleClickEvent((ClickEvent) evt);
+					break;
 			}
 		}
 		state.nextLStatus = MixState.PROCESSING;
@@ -308,6 +311,7 @@ public class DataView {
 			double lat = curFix.getLatitude(), lon = curFix.getLongitude(), alt = curFix
 					.getAltitude();
 			Log.v("unique3","loaddrawlayer else " + lat + " " + lon + " " + alt + " " + radius );
+
 			state.nextLStatus = MixState.PROCESSING;
 			mixContext.getDataSourceManager().requestDataFromAllActiveDataSource(lat, lon, alt,	radius);
 		}
@@ -316,7 +320,7 @@ public class DataView {
 		if (state.nextLStatus == MixState.NOT_STARTED)
 			state.nextLStatus = MixState.DONE;
 	}
-	
+
 	private List<Marker> downloadDrawResults(DownloadManager dm, DownloadResult dRes){
 		List<Marker> markers = new ArrayList<Marker>();
 
@@ -328,7 +332,7 @@ public class DataView {
 						dRes.getErrorRequest());
 
 			}
-			
+
 			if(!dRes.isError()) {
 				if(dRes.getMarkers() != null){
 					//jLayer = (DataHandler) dRes.obj;
@@ -346,7 +350,7 @@ public class DataView {
 		}
 		return markers;
 	}
-	
+
 
 	/**
 	 * Handles drawing radar and direction.
@@ -395,25 +399,25 @@ public class DataView {
 		/** Adjust marker position with keypad */
 		final float CONST = 10f;
 		switch (evt.keyCode) {
-		case KEYCODE_DPAD_LEFT:
-			addX -= CONST;
-			break;
-		case KEYCODE_DPAD_RIGHT:
-			addX += CONST;
-			break;
-		case KEYCODE_DPAD_DOWN:
-			addY += CONST;
-			break;
-		case KEYCODE_DPAD_UP:
-			addY -= CONST;
-			break;
-		case KEYCODE_DPAD_CENTER:
-			frozen = !frozen;
-			break;
-		case KEYCODE_CAMERA:
-			frozen = !frozen;
-			break; // freeze the overlay with the camera button
-		default: //if key is set, then ignore event
+			case KEYCODE_DPAD_LEFT:
+				addX -= CONST;
+				break;
+			case KEYCODE_DPAD_RIGHT:
+				addX += CONST;
+				break;
+			case KEYCODE_DPAD_DOWN:
+				addY += CONST;
+				break;
+			case KEYCODE_DPAD_UP:
+				addY -= CONST;
+				break;
+			case KEYCODE_DPAD_CENTER:
+				frozen = !frozen;
+				break;
+			case KEYCODE_CAMERA:
+				frozen = !frozen;
+				break; // freeze the overlay with the camera button
+			default: //if key is set, then ignore event
 				break;
 		}
 	}
@@ -475,17 +479,17 @@ public class DataView {
 			refresh.cancel();
 		}
 	}
-	
+
 	/**
 	 * Re-downloads the markers, and draw them on the map.
 	 */
 	public void refresh(){
 		state.nextLStatus = MixState.NOT_STARTED;
 	}
-	
+
 	private void callRefreshToast(){
 		mixContext.getActualMixView().runOnUiThread(new Runnable() {
-			
+
 			@Override
 			public void run() {
 				/*Toast.makeText(

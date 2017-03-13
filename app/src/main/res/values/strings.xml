@@ -12,10 +12,10 @@
     <!-- Accessibility description for navigation mDrawerLayout -->
     <string name="navdrawer_description_a11y">Navigation Drawer used to switch between major features of the application</string>
     <string name="title_activity_deleteme">deleteme</string>
-    <string name="title_activity_2">Friends</string>
+    <string name="title_activity_2">New Friends</string>
     <string name="title_activity_3">Profile</string>
     <string name="title_activity_4">Gallery</string>
-    <string name="title_activity_5">List of Buildings Around</string>
+    <string name="title_activity_5">List of Buildings</string>
     <string name="title_activity_6">Settings</string>
     <string name="title_activity_7">Change Password</string>
 

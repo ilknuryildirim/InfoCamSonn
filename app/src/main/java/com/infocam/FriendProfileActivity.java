@@ -3,14 +3,20 @@ package com.infocam;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.TaskStackBuilder;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,6 +34,7 @@ public class FriendProfileActivity extends BaseActivity {
     TextView name;
     TextView email;
     Button galleryButton;
+    ImageView img;
 
     private static String KEY_SUCCESS = "success";
 
@@ -37,21 +44,26 @@ public class FriendProfileActivity extends BaseActivity {
         setContentView(R.layout.activity_friendprofile);
         DatabaseHandler db = new DatabaseHandler(getApplicationContext());
 
-        galleryButton = (Button) findViewById(R.id.galleryButton);
-        galleryButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                Toast.makeText(FriendProfileActivity.this, "gallery button is clicked", Toast.LENGTH_SHORT).show();
-
-            }
-        });
 
 
+
+        img = (ImageView) findViewById(R.id.imageview_profile);
 
         Intent i = getIntent();
         friendID = i.getStringExtra("friendID");
 
-        NetAsync("GetFriend", friendID);
 
+        NetAsync("GetFriend", friendID);
+        galleryButton = (Button) findViewById(R.id.galleryButton);
+        galleryButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                Intent myIntent = new Intent(getApplicationContext(), FriendGalleryActivity.class);
+                myIntent.putExtra("friendID", friendID);
+                startActivityForResult(myIntent, 0);
+                //startActivity(myIntent);
+                finish();
+            }
+        });
         /**
          * Hashmap to load data from the Sqlite database
          **/
@@ -61,17 +73,20 @@ public class FriendProfileActivity extends BaseActivity {
         name = (TextView) findViewById(R.id.textview_username);
 
         email = (TextView) findViewById(R.id.textview_email);
-        /*final TextView bio = (TextView) findViewById(R.id.profileBio);
-        bio.setText(user.get("bio"));*/
 
 
-
-
-        //Set nav drawer selected to second item in list
-        mNavigationView.getMenu().getItem(2).setChecked(true);
 
     }
-
+    private void createBackStack(Intent intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            TaskStackBuilder builder = TaskStackBuilder.create(this);
+            builder.addNextIntentWithParentStack(intent);
+            builder.startActivities();
+        } else {
+            startActivity(intent);
+            finish();
+        }
+    }
 
 
     private class NetCheck extends AsyncTask<String,String,Boolean>
@@ -164,6 +179,8 @@ public class FriendProfileActivity extends BaseActivity {
 //            Toast.makeText(FriendProfileActivity.this, "friendid = " + friendID, Toast.LENGTH_SHORT).show();
             System.out.println("FRIEND ID = " + friendID);
             JSONObject json = userFunction.getFriend(friendID);
+            Log.v("FRIENDjson",json.toString());
+
             return json;
         }
 
@@ -173,10 +190,10 @@ public class FriendProfileActivity extends BaseActivity {
                 if (json.getString(KEY_SUCCESS) != null) {
 
                     String res = json.getString(KEY_SUCCESS);
+                    if(Integer.parseInt(res)==1) {
+                        pDialog.dismiss();
 
-                    pDialog.dismiss();
-
-                    JSONObject jsonobject = json.getJSONObject("user");
+                        JSONObject jsonobject = json.getJSONObject("user");
 
                         String firstname = jsonobject.getString("fname");
                         String lastname = jsonobject.getString("lname");
@@ -187,8 +204,13 @@ public class FriendProfileActivity extends BaseActivity {
                         name.setText(tmp);
                         email.setText("Email: " + emailA);
 
+                        String image = json.getString("image");
 
+                        byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
+                        img.setImageBitmap(decodedByte);
+                    }
 
                 }
             } catch (JSONException e) {

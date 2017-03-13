@@ -19,9 +19,6 @@
 
 package com.infocam.data;
 
-import com.infocam.R;
-import com.infocam.data.convert.DataConvertor;
-
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -32,7 +29,9 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.infocam.R;
+import com.infocam.data.convert.DataConvertor;
 
 /**
  * The DataSource class is able to create the URL where the information about a
@@ -189,7 +188,7 @@ public class DataSource extends Activity {
 				float geoNamesRadius = radius > 20 ? 20 : radius; // Free service limited to 20km
 				ret += "?lat=" + lat + "&lng=" + lon + "&radius="
 						+ geoNamesRadius + "&maxRows=50" + "&lang=" + locale
-						+ "&username=mixare";
+						+ "&username=infocam";
 				break;
 
 			case BUZZ:

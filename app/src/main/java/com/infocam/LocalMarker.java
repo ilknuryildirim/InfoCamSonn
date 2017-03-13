@@ -18,8 +18,11 @@
  */
 package com.infocam;
 
-import java.net.URLDecoder;
-import java.text.DecimalFormat;
+import android.app.TaskStackBuilder;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.location.Location;
+import android.os.Build;
 
 import com.infocam.lib.MixContextInterface;
 import com.infocam.lib.MixStateInterface;
@@ -35,8 +38,7 @@ import com.infocam.lib.reality.PhysicalPlace;
 import com.infocam.lib.render.Camera;
 import com.infocam.lib.render.MixVector;
 
-import android.graphics.Bitmap;
-import android.location.Location;
+import java.text.DecimalFormat;
 
 /**
  * The class represents a marker and contains its information.
@@ -83,7 +85,7 @@ public abstract class LocalMarker implements Marker {
 		this.title = title;
 		this.mGeoLoc = new PhysicalPlace(latitude,longitude,altitude);
 		if (link != null && link.length() > 0) {
-			URL = "webpage:" + URLDecoder.decode(link);
+			URL = "webpage:" + link;
 			this.underline = true;
 		}
 		this.colour = colour;
@@ -250,19 +252,34 @@ public abstract class LocalMarker implements Marker {
 			dw.setStrokeWidth(1f);
 			dw.setFill(true);
 			dw.paintObj(txtLab, signMarker.x - txtLab.getWidth()
-					/ 2, signMarker.y + maxHeight, currentAngle + 90, 1);
+					/ 2, signMarker.y + maxHeight, currentAngle, 1);
 		}
 
 	}
 
-	public boolean fClick(float x, float y, MixContextInterface ctx, MixStateInterface state) {
-		boolean evtHandled = false;
-
-		if (isClickValid(x, y)) {
-			evtHandled = state.handleEvent(ctx, URL);
-		}
-		return evtHandled;
-	}
+    public boolean fClick(float x, float y, MixContextInterface ctx, MixStateInterface state) {
+        boolean evtHandled = false;
+        
+        if (isClickValid(x, y)) {
+            String urlToSend = getURL();
+            
+            createBackStack(new Intent(((MixContext)ctx).getActualMixView(), BuildingInfoActivity.class),ctx, URL);
+            //evtHandled = state.handleEvent(ctx, URL);
+        }
+        return evtHandled;
+    }
+    private void createBackStack(Intent intent, MixContextInterface ctx, String URL) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            TaskStackBuilder builder = TaskStackBuilder.create(((MixContext) ctx).getActualMixView().getApplicationContext());
+            builder.addNextIntentWithParentStack(intent);
+            intent.putExtra("url", URL);
+            builder.startActivities();
+        } else {
+            intent.putExtra("url", URL);
+            ((MixContext) ctx).getActualMixView().startActivity(intent);
+            ((MixContext) ctx).getActualMixView().finish();
+        }
+    }
 
 	public double getDistance() {
 		return distance;

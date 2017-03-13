@@ -12,9 +12,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -23,7 +23,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,6 +42,9 @@ public class MyFriendsActivity extends BaseActivity {
     private ArrayList<String> data = new ArrayList<String>();
     private ArrayList<String> userIDs = new ArrayList<>();
     HashMap<String,String> friends = new HashMap<String, String>();
+
+
+    private ArrayList<Bitmap> images = new ArrayList<Bitmap>();
 
     private ArrayAdapter<String> UserListAdapter;
 
@@ -64,19 +66,19 @@ public class MyFriendsActivity extends BaseActivity {
 
 
         //Create a listview to show users
-        usersList=(ListView) findViewById(R.id.listview);
+        usersList=(ListView) findViewById(R.id.listview_myf);
         searchFriend 	= 	(EditText) findViewById(R.id.searchFriend);
         // get the user list
-        NetAsync2("GetMyFriends","a");
 
-        UserListAdapter = new MyListAdaper(this, R.layout.list_item_friends, data, userIDs);
+
+        UserListAdapter = new MyListAdaper(this, R.layout.list_item_myfriends, data, userIDs);
         usersList.setAdapter(UserListAdapter);
         usersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(MyFriendsActivity.this, "List item was clicked at " + friends.get(view.getTag()), Toast.LENGTH_SHORT).show();
 
                 Intent myIntent = new Intent(view.getContext(), FriendProfileActivity.class);
+                Log.d("fidasd",friends.get(view.getTag()));
                 myIntent.putExtra("friendID", friends.get(view.getTag()));
                 startActivityForResult(myIntent, 0);
                 //startActivity(myIntent);
@@ -84,11 +86,7 @@ public class MyFriendsActivity extends BaseActivity {
             }
         });
 
-
-
-        //Set nav drawer selected to second item in list
-        mNavigationView.getMenu().getItem(2).setChecked(true);
-
+        NetAsync2("GetMyFriends", "a");
 
         // Enabling Search Functionality
         searchFriend.addTextChangedListener(new TextWatcher() {
@@ -119,24 +117,11 @@ public class MyFriendsActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        //getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     private class MyListAdaper extends ArrayAdapter<String> {
         private int layout;
@@ -152,22 +137,21 @@ public class MyFriendsActivity extends BaseActivity {
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
             ViewHolder mainViewholder = null;
+            convertView = null;
             if(convertView == null) {
                 LayoutInflater inflater = LayoutInflater.from(getContext());
                 convertView = inflater.inflate(layout, parent, false);
                 ViewHolder viewHolder = new ViewHolder();
-                viewHolder.thumbnail = (ImageView) convertView.findViewById(R.id.list_item_thumbnail_f);
-                viewHolder.title = (TextView) convertView.findViewById(R.id.list_item_text_f);
+                viewHolder.thumbnail = (ImageView) convertView.findViewById(R.id.list_item_thumbnail_myfriends);
+                viewHolder.title = (TextView) convertView.findViewById(R.id.list_item_text_myfriends);
                 convertView.setTag(viewHolder);
             }
             mainViewholder = (ViewHolder) convertView.getTag();
-
             mainViewholder.title.setText(getItem(position));
+
+            if(images.get(position)!=null)
+                mainViewholder.thumbnail.setImageBitmap(images.get(position));
             convertView.setTag(getItem(position));
-
-
-            new UploadImage(mainViewholder.thumbnail,mIDs.get(position));
-
             return convertView;
         }
     }
@@ -284,22 +268,34 @@ public class MyFriendsActivity extends BaseActivity {
                 if (json.getString(KEY_SUCCESS) != null) {
 
                     String res = json.getString(KEY_SUCCESS);
+                    if(Integer.parseInt(res) == 1) {
+                        UserListAdapter.clear();
 
-                    UserListAdapter.clear();
+                        JSONArray jsonarray = json.getJSONArray("users");
+                        for (int i = 0; i < jsonarray.length(); i++) {
+                            JSONObject jsonobject = jsonarray.getJSONObject(i);
+                            String firstname = jsonobject.getString("firstname");
+                            String lastname = jsonobject.getString("lastname");
+                            String uid = jsonobject.getString("uid");
 
+                            String tmp;
+                            tmp = firstname + " " + lastname;
+                            data.add(tmp);
+                            userIDs.add(uid);
+                            friends.put(tmp, uid);
+                            String name = jsonobject.getString("name");
 
-                    JSONArray jsonarray = json.getJSONArray("users");
-                    for (int i = 0; i < jsonarray.length(); i++) {
-                        JSONObject jsonobject = jsonarray.getJSONObject(i);
-                        String firstname = jsonobject.getString("firstname");
-                        String lastname = jsonobject.getString("lastname");
-                        String uid = jsonobject.getString("uid");
+                            String hasimage = jsonobject.getString("hasimage");
+                            if(Integer.parseInt(hasimage)==1){
+                                String image = jsonobject.getString("image");
+                                byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
+                                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                                images.add(i,decodedByte);
 
-                        String tmp;
-                        tmp = firstname + " " + lastname;
-                        data.add(tmp);
-                        userIDs.add(uid);
-                        friends.put(tmp,uid);
+                            }else {
+                                images.add(i,null);
+                            }
+                        }
                     }
                     pDialog.dismiss();
 

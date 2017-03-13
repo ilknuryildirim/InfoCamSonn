@@ -18,32 +18,47 @@ package com.infocam;
  * this program. If not, see <http://www.gnu.org/licenses/>
  */
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.GeomagneticField;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.text.format.DateFormat;
+import android.util.FloatMath;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -55,17 +70,19 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.infocam.data.DataHandler;
-import com.infocam.data.DataSourceList;
-import com.infocam.lib.gui.PaintScreen;
-import com.infocam.lib.marker.Marker;
-import com.infocam.lib.render.Matrix;
-
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import static android.hardware.SensorManager.SENSOR_DELAY_GAME;
+
 
 /**
  * This class is the main application which uses the other classes for different
@@ -74,20 +91,28 @@ import static android.hardware.SensorManager.SENSOR_DELAY_GAME;
  * camera screen.
  * It also handles the main sensor events, touch events and location events.
  */
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.infocam.data.DataHandler;
+import com.infocam.data.DataSourceList;
+import com.infocam.lib.gui.PaintScreen;
+import com.infocam.lib.marker.Marker;
+import com.infocam.lib.render.Matrix;
 
 
-public class MixView extends BaseActivity implements SensorEventListener, View.OnTouchListener {
-
+public class MixView extends Activity implements SensorEventListener, View.OnTouchListener {
+    public Camera.PictureCallback mPicture;
     private CameraSurface camScreen;
     private AugmentedView augScreen;
-
+    public static Camera camera;
     private boolean isInited;
     private static PaintScreen dWindow;
     private static DataView dataView;
     private boolean fError;
 
     //----------
-    private MixViewDataHolder mixViewData  ;
+    private MixViewDataHolder mixViewData;
 
     // TAG for logging
     public static final String TAG = "InfoCam";
@@ -97,6 +122,11 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 
     /* string to name & access the preference file in the internal storage */
     public static final String PREFS_NAME = "MyPrefsFileForMenuItems";
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,7 +136,19 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
         //MixView.CONTEXT = this;
+        /*FloatingActionButton captureButton = (FloatingActionButton) findViewById(R.id.button_capture);
+        captureButton.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // get an image from the camera
+                        camScreen.camera.takePicture(null, null, mPicture);
+                    }
+                }
+        );*/
         try {
 
             handleIntent(getIntent());
@@ -116,15 +158,19 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 
             killOnError();
 
-
-            maintainCamera();
+            FloatingActionButton captureButton = (FloatingActionButton) findViewById(R.id.fab);
+            captureButton.setOnClickListener(
+                    new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            // get an image from the camera
+                            camera.takePicture(null, null, mPicture);
+                        }
+                    }
+            );
+            maintainCamera(camera);
             maintainAugmentR();
             maintainZoomBar();
-
-            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-            getSupportActionBar().setDisplayShowTitleEnabled(false);
-
-
 
             if (!isInited) {
                 //getMixViewData().setMixContext(new MixContext(this));
@@ -141,7 +187,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 
 			/*check if the application is launched for the first time*/
-            if(settings.getBoolean("firstAccess",false)==false){
+            if (settings.getBoolean("firstAccess", false) == false) {
                 firstAccess(settings);
 
             }
@@ -150,20 +196,62 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             Log.v("ex1", "message");
             doError(ex);
         }
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
+    /*public void takeScreenshot() {
+        Date now = new Date();
+        DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
+
+        try {
+            // image naming and path  to include sd card  appending name you choose for file
+            String mPath = Environment.getExternalStorageDirectory().toString() + "/" + now + ".jpg";
+
+            // create bitmap screen capture
+            View v1 = getWindow().getDecorView().getRootView();
+            v1.setDrawingCacheEnabled(true);
+
+            // this is the important code :)
+            // Without it the view will have a dimension of 0,0 and the bitmap will
+            // be null
+            ViewGroup v1 = (ViewGroup) this.findViewById(id).getRootView();
+            v1.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            v1.layout(0, 0, v1.getMeasuredWidth(), v1.getMeasuredHeight());
+
+            v1.buildDrawingCache(true);
+            v1.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            if(v1 == null)
+                Log.v("aaaaaaaaaa", "v1 nulll : ");
+            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+            if (bitmap != null) {
+                int rgbColor = bitmap.getPixel(200, 100);
+                Log.v("pixell", "color : " + rgbColor);
+            }
+            v1.setDrawingCacheEnabled(false);
+
+        } catch (Throwable e) {
+            // Several error may come out with file handling or OOM
+            e.printStackTrace();
+        }
+    }*/
+
     public MixViewDataHolder getMixViewData() {
-        if (mixViewData==null){
+        if (mixViewData == null) {
             // TODO: VERY important, only one!
             mixViewData = new MixViewDataHolder(new MixContext(this));
         }
         return mixViewData;
     }
 
+
     @Override
     protected void onPause() {
         super.onPause();
-
+        camScreen.releaseCam();
         try {
             this.getMixViewData().getmWakeLock().release();
 
@@ -215,6 +303,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             // do nothing do to mix of return results.
         }
     }
+
     @SuppressWarnings("deprecation")
     @Override
     protected void onResume() {
@@ -241,7 +330,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             // display text from left to right and keep it horizontal
             angleX = (float) Math.toRadians(marker_orientation);
             getMixViewData().getM1().set(1f, 0f, 0f, 0f,
-                    (float) Math.cos((int)Math.ceil(angleX)),
+                    (float) Math.cos((int) Math.ceil(angleX)),
                     (float) -Math.sin((int) Math.ceil(angleX)), 0f,
                     (float) Math.sin((int) Math.ceil(angleX)),
                     (float) Math.cos((int) Math.ceil(angleX)));
@@ -249,24 +338,24 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             angleY = (float) Math.toRadians(marker_orientation);
             if (rotation == 1) {
                 getMixViewData().getM2().set(1f, 0f, 0f, 0f,
-                        (float) Math.cos((int)Math.ceil(angleX)),
+                        (float) Math.cos((int) Math.ceil(angleX)),
                         (float) -Math.sin((int) Math.ceil(angleX)), 0f,
                         (float) Math.sin((int) Math.ceil(angleX)),
-                        (float) Math.cos((int)Math.ceil(angleX)));
-                getMixViewData().getM3().set((float) Math.cos((int)Math.ceil(angleY)), 0f,
+                        (float) Math.cos((int) Math.ceil(angleX)));
+                getMixViewData().getM3().set((float) Math.cos((int) Math.ceil(angleY)), 0f,
                         (float) Math.sin((int) Math.ceil(angleY)), 0f, 1f, 0f,
                         (float) -Math.sin((int) Math.ceil(angleY)), 0f,
-                        (float) Math.cos((int)Math.ceil(angleY)));
+                        (float) Math.cos((int) Math.ceil(angleY)));
             } else {
-                getMixViewData().getM2().set((float) Math.cos((int)Math.ceil(angleX)), 0f,
+                getMixViewData().getM2().set((float) Math.cos((int) Math.ceil(angleX)), 0f,
                         (float) Math.sin((int) Math.ceil(angleX)), 0f, 1f, 0f,
                         (float) -Math.sin((int) Math.ceil(angleX)), 0f,
-                        (float) Math.cos((int)Math.ceil(angleX)));
+                        (float) Math.cos((int) Math.ceil(angleX)));
                 getMixViewData().getM3().set(1f, 0f, 0f, 0f,
-                        (float) Math.cos((int)Math.ceil(angleY)),
+                        (float) Math.cos((int) Math.ceil(angleY)),
                         (float) -Math.sin((int) Math.ceil(angleY)), 0f,
                         (float) Math.sin((int) Math.ceil(angleY)),
-                        (float) Math.cos((int)Math.ceil(angleY)));
+                        (float) Math.cos((int) Math.ceil(angleY)));
 
             }
 
@@ -360,9 +449,10 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
      * Customize Activity after switching back to it.
      * Currently it maintain and ensures view creation.
      */
-    protected void onRestart (){
+    protected void onRestart() {
         super.onRestart();
-        maintainCamera();
+        maintainCamera(camera);
+
         maintainAugmentR();
         maintainZoomBar();
 
@@ -381,11 +471,11 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
     }
 
     /**
-     *  Checks camScreen, if it does not exist, it creates one.
+     * Checks camScreen, if it does not exist, it creates one.
      */
-    private void maintainCamera() {
-        if (camScreen == null){
-            camScreen = new CameraSurface(this);
+    private void maintainCamera(Camera camera) {
+        if (camScreen == null) {
+            camScreen = new CameraSurface(this, camera);
         }
         setContentView(camScreen);
     }
@@ -394,7 +484,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
      * Checks augScreen, if it does not exist, it creates one.
      */
     private void maintainAugmentR() {
-        if (augScreen == null ){
+        if (augScreen == null) {
             augScreen = new AugmentedView(this);
         }
         addContentView(augScreen, new ViewGroup.LayoutParams(
@@ -416,7 +506,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
      * Refreshes Download
      * TODO refresh downloads
      */
-    private void refreshDownload(){
+    private void refreshDownload() {
 //		try {
 //			if (getMixViewData().getDownloadThread() != null){
 //				if (!getMixViewData().getDownloadThread().isInterrupted()){
@@ -433,11 +523,11 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 //		}
     }
 
-    public void refresh(){
+    public void refresh() {
         dataView.refresh();
     }
 
-    public void setErrorDialog(){
+    public void setErrorDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Eroor");
         builder.setCancelable(true);
@@ -445,21 +535,20 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 		/*Retry*/
         builder.setPositiveButton("", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                fError=false;
+                fError = false;
                 //TODO improve
                 try {
-                    maintainCamera();
+                    maintainCamera(camera);
                     maintainAugmentR();
                     repaint();
                     setZoomLevel();
-                }
-                catch(Exception ex){
+                } catch (Exception ex) {
                     //Don't call doError, it will be a recursive call.
                     //doError(ex);
                 }
             }
         });
-		/*Open settings*/
+        /*Open settings*/
         builder.setNeutralButton("", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 Intent intent1 = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
@@ -477,7 +566,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
     }
 
 
-    public float calcZoomLevel(){
+    public float calcZoomLevel() {
 
         int myZoomLevel = getMixViewData().getMyZoomBar().getProgress();
         float myout = 5;
@@ -534,7 +623,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
      * Create zoom bar and returns FrameLayout. FrameLayout is created to be
      * hidden and not added to view, Caller needs to add the frameLayout to
      * view, and enable visibility when needed.
-     *
+     * <p/>
      * param SharedOreference settings where setting is stored
      * return FrameLayout Hidden Zoom Bar
      */
@@ -591,7 +680,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
         return true;
     }
 
-    private void createBackStack(Intent intent) {
+    public void createBackStack(Intent intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             TaskStackBuilder builder = TaskStackBuilder.create(this);
             builder.addNextIntentWithParentStack(intent);
@@ -601,7 +690,8 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
             finish();
         }
     }
-    public void logout(){
+
+    public void logout() {
         UserFunctions logout = new UserFunctions();
         logout.logoutUser(getApplicationContext());
         Intent login = new Intent(getApplicationContext(), Login.class);
@@ -615,6 +705,11 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
         int id = item.getItemId();
 
         switch (id) {
+            case R.id.nav_photo:
+                onPause();
+                createBackStack(new Intent(this, CameraActivity.class));
+
+                break;
             case R.id.nav_main:
                 createBackStack(new Intent(this, MixView.class));
                 break;
@@ -644,7 +739,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
                 break;
         }
 
-        closeNavDrawer();
+        //closeNavDrawer();
         overridePendingTransition(R.anim.enter_from_left, R.anim.exit_out_left);
 
         return true;
@@ -792,7 +887,11 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
                     return super.onKeyDown(keyCode, event);
                 }
             } else if (keyCode == KeyEvent.KEYCODE_MENU) {
-                return super.onKeyDown(keyCode, event);
+                DrawerLayout mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+                if (!mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+                    mDrawerLayout.openDrawer(GravityCompat.START);
+                }
+                return true;
             } else {
                 getDataView().keyEvent(keyCode);
                 return false;
@@ -912,8 +1011,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 
 
     /**
-     * @param dWindow
-     *            the dWindow to set
+     * @param dWindow the dWindow to set
      */
     static void setdWindow(PaintScreen dWindow) {
         MixView.dWindow = dWindow;
@@ -928,8 +1026,7 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
     }
 
     /**
-     * @param dataView
-     *            the dataView to set
+     * @param dataView the dataView to set
      */
     static void setDataView(DataView dataView) {
         MixView.dataView = dataView;
@@ -954,8 +1051,47 @@ public class MixView extends BaseActivity implements SensorEventListener, View.O
 
         getMixViewData().getMixContext().getDownloadManager().switchOn();
 
-    };
+    }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "MixView Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app deep link URI is correct.
+                Uri.parse("android-app://com.infocam/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(client, viewAction);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "MixView Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app deep link URI is correct.
+                Uri.parse("android-app://com.infocam/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(client, viewAction);
+        client.disconnect();
+    }
 }
 
 
@@ -967,10 +1103,90 @@ class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
     MixView app;
     SurfaceHolder holder;
     Camera camera;
+    public static final int MEDIA_TYPE_IMAGE = 1;
+    public static final int MEDIA_TYPE_VIDEO = 2;
+    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
+    public void setCamera(Camera camera){
+        this.camera = camera;
+    }
+    private Camera.PictureCallback mPicture = new Camera.PictureCallback() {
 
-    CameraSurface(Context context) {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+            Log.v("tag", "onpictaken called");
+            File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+            if (pictureFile == null) {
+                Log.d("TAG", "Error creating media file, check storage permissions: ");
+                return;
+            }
+
+            try {
+                FileOutputStream fos = new FileOutputStream(pictureFile);
+                fos.write(data);
+                fos.close();
+            } catch (FileNotFoundException e) {
+                Log.d("TAG", "File not found: " + e.getMessage());
+            } catch (IOException e) {
+                Log.d("TAG", "Error accessing file: " + e.getMessage());
+            }
+        }
+    };
+    public void releaseCam(){
+        if(camera != null)
+            camera.release();
+    }
+    private void storeImage(Bitmap image) {
+        File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+        if (pictureFile == null) {
+            Log.d("phototake", "Error creating media file, check storage permissions: ");// e.getMessage());
+            return;
+        }
+        try {
+            FileOutputStream fos = new FileOutputStream(pictureFile);
+            image.compress(Bitmap.CompressFormat.PNG, 90, fos);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            Log.d("phototake", "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.d("phototake", "Error accessing file: " + e.getMessage());
+        }
+    }
+    public static File getOutputMediaFile(int type){
+        // To be safe, you should check that the SDCard is mounted
+        // using Environment.getExternalStorageState() before doing this.
+
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "Infocam");
+        // This location works best if you want the created images to be shared
+        // between applications and persist after your app has been uninstalled.
+
+        // Create the storage directory if it does not exist
+        if (! mediaStorageDir.exists()){
+            if (! mediaStorageDir.mkdirs()){
+                Log.d("Infocam", "failed to create directory");
+                return null;
+            }
+        }
+
+        // Create a media file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File mediaFile;
+        if (type == MEDIA_TYPE_IMAGE){
+            Log.v("tag", "image saved!!!!!!!!!!!!!!!!!!!!");
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                    "IMG_"+ timeStamp + ".jpg");
+        } else if(type == MEDIA_TYPE_VIDEO) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                    "VID_"+ timeStamp + ".mp4");
+        } else {
+            return null;
+        }
+
+        return mediaFile;
+    }
+    CameraSurface(Context context, Camera camera) {
         super(context);
-
+        this.camera = camera;
         try {
             app = (MixView) context;
 
@@ -983,13 +1199,31 @@ class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
+
         try {
+
             if (camera != null) {
+                /*camera.setPreviewCallback(new Camera.PreviewCallback() {
+                    @Override
+                    public void onPreviewFrame(byte[] data,Camera cam)
+                    {
+                        Camera.Size previewSize = cam.getParameters().getPreviewSize();
+                        YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21,previewSize.width,previewSize.height, null);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        yuvImage.compressToJpeg(new Rect(0,0,previewSize.width,previewSize.height),80,baos);
+                        byte[] jdata = baos.toByteArray();
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(jdata,0,jdata.length);
+                        int rgbColor = bitmap.getPixel(200, 100);
+                        Log.v("pixell", "color : " + rgbColor);
+                    }
+                });*/
                 try {
+
                     camera.stopPreview();
                 } catch (Exception ignore) {
                 }
                 try {
+
                     camera.release();
                 } catch (Exception ignore) {
                 }
@@ -1020,6 +1254,7 @@ class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceDestroyed(SurfaceHolder holder) {
         try {
             if (camera != null) {
+
                 try {
                     camera.stopPreview();
                 } catch (Exception ignore) {
@@ -1039,7 +1274,9 @@ class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         try {
             Camera.Parameters parameters = camera.getParameters();
+
             try {
+
                 List<Camera.Size> supportedSizes = null;
                 // On older devices (<1.6) the following will fail
                 // the camera will work nevertheless
@@ -1105,6 +1342,19 @@ class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
 
             camera.setParameters(parameters);
             camera.startPreview();
+            /*camera.setPreviewCallback(new Camera.PreviewCallback() {
+                @Override
+                public void onPreviewFrame(byte[] data, Camera cam) {
+                    Camera.Size previewSize = cam.getParameters().getPreviewSize();
+                    YuvImage yuvImage = new YuvImage(data, ImageFormat.NV21, previewSize.width, previewSize.height, null);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    yuvImage.compressToJpeg(new Rect(0, 0, previewSize.width, previewSize.height), 80, baos);
+                    byte[] jdata = baos.toByteArray();
+                    Bitmap bitmap = BitmapFactory.decodeByteArray(jdata, 0, jdata.length);
+                    int rgbColor = bitmap.getPixel(200, 300);
+                    Log.v("pixell", "color : " + rgbColor);
+                }
+            });*/
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -1156,8 +1406,7 @@ class AugmentedView extends View {
             MixView.getdWindow().setCanvas(canvas);
 
             if (!MixView.getDataView().isInited()) {
-                MixView.getDataView().init(MixView.getdWindow().getWidth(),
-                        MixView.getdWindow().getHeight());
+                MixView.getDataView().init(MixView.getdWindow().getWidth(), MixView.getdWindow().getHeight());
             }
             if (app.isZoombarVisible()) {
                 Log.v("ex3", "zoom level");

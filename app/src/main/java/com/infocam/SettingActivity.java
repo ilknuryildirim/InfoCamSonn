@@ -17,7 +17,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -82,7 +81,7 @@ public class SettingActivity extends BaseActivity {
 
 
         //Set nav drawer selected to second item in list
-        mNavigationView.getMenu().getItem(5).setChecked(true);
+        mNavigationView.getMenu().getItem(6).setChecked(true);
 
     }
 
@@ -157,7 +156,7 @@ public class SettingActivity extends BaseActivity {
             if(b == 1) {
                 String namenew = fromID + "_profil";
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                bmp.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+                bmp.compress(Bitmap.CompressFormat.JPEG, 10, byteArrayOutputStream);
                 String encodedImage = Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.DEFAULT);
                 json = userFunction.updateProfilePicture(namenew, encodedImage, fromID);
             }
@@ -176,9 +175,8 @@ public class SettingActivity extends BaseActivity {
                 Toast.makeText(getApplicationContext(), "IMAGE UPLOADED SUCCESSFULLY", Toast.LENGTH_LONG).show();
             }else{
                 try {
-                    JSONArray jsonarray = json.getJSONArray("images");
-                    JSONObject jsonobject = jsonarray.getJSONObject(0);
-                    String image = jsonobject.getString("image");
+
+                    String image = json.getString("image");
 
                     byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
                     Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
@@ -190,18 +188,5 @@ public class SettingActivity extends BaseActivity {
         }
     }
 
-    /** HIDE TOOLBAR **/
-//    @Override
-//    protected boolean useToolbar() {
-//        return false;
-//    }
-
-
-
-    /** HIDE hamburger menu **/
-//    @Override
-//    protected boolean useDrawerToggle() {
-//        return false;
-//    }
 
 }

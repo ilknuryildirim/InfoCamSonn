@@ -14,13 +14,10 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Base64;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -78,23 +75,12 @@ public class GalleryActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_mygallery);
+        setContentView(R.layout.activity_gallery);
 
         imagesList=(GridView) findViewById(R.id.imageview1);
         searchImage    =  (SearchView) findViewById(R.id.searchImage1);
 
         NetAsync2();
-
-        /*GalleryListAdapter = new MyListAdaper(this, R.layout.list_gallery, data);
-        imagesList.setAdapter(GalleryListAdapter);
-        imagesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(GalleryActivity.this, "List item was clicked at " + position, Toast.LENGTH_SHORT).show();
-            }
-        });*/
-
-
 
         imagesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -119,45 +105,11 @@ public class GalleryActivity extends BaseActivity {
             }
 
         });
-
         mShortAnimationDuration = getResources().getInteger(android.R.integer.config_shortAnimTime);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "MyGalleryActivity", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-
-
-
         //Set nav drawer selected to second item in list
-        mNavigationView.getMenu().getItem(3).setChecked(true);
-
-        // Enabling Search Functionality
-        /*searchImage.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void onTextChanged(CharSequence cs, int arg1, int arg2, int arg3) {
-                // When user changed the Text
-                GalleryActivity.this.GalleryListAdapter.getFilter().filter(cs);
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence arg0, int arg1, int arg2,
-                                          int arg3) {
-                // TODO Auto-generated method stub
+        mNavigationView.getMenu().getItem(4).setChecked(true);
 
 
-            }
-
-            @Override
-            public void afterTextChanged(Editable arg0) {
-                // TODO Auto-generated method stub
-            }
-        });*/
 
     }
     private void zoomImageFromThumb(final View thumbView, Bitmap img){
@@ -356,29 +308,6 @@ public class GalleryActivity extends BaseActivity {
     }
 
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     private class NetCheck2 extends AsyncTask<String,String,Boolean>
     {
 
@@ -467,7 +396,7 @@ public class GalleryActivity extends BaseActivity {
                 if (json.getString(KEY_SUCCESS) != null) {
 
                     String res = json.getString(KEY_SUCCESS);
-
+                    Log.d("GALLERYASD", json.toString());
                     // UserListAdapter.clear();
                     JSONArray jsonarray = json.getJSONArray("images");
                     for (int i = 0; i < jsonarray.length(); i++) {

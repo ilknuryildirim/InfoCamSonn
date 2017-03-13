@@ -3,10 +3,13 @@ package com.infocam;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,6 +39,8 @@ public class RequestActivity extends BaseActivity {
 
     public ArrayList<String> dataR = new ArrayList<String>();
     private ArrayList<String> userIDs = new ArrayList<>();
+
+    private ArrayList<Bitmap> images = new ArrayList<Bitmap>();
     HashMap<String,String> friends = new HashMap<String, String>();
     private ArrayAdapter<String> UserListAdapter;
     private static String KEY_SUCCESS = "success";
@@ -122,8 +127,12 @@ public class RequestActivity extends BaseActivity {
 
 
             mainViewholder.title.setText(getItem(position));
+
             mainViewholder.buttonA.setTag(getItem(position));
             mainViewholder.buttonR.setTag(getItem(position));
+            if(images.get(position)!=null)
+                mainViewholder.thumbnail.setImageBitmap(images.get(position));
+
             return convertView;
         }
     }
@@ -249,22 +258,36 @@ public class RequestActivity extends BaseActivity {
                 if (json.getString(KEY_SUCCESS) != null) {
 
                     String res = json.getString(KEY_SUCCESS);
+                    if(Integer.parseInt(res)==1) {
+                        UserListAdapter.clear();
+                        pDialog.dismiss();
 
-                    UserListAdapter.clear();
-                    pDialog.dismiss();
+                        JSONArray jsonarray = json.getJSONArray("users");
+                        for (int i = 0; i < jsonarray.length(); i++) {
+                            JSONObject jsonobject = jsonarray.getJSONObject(i);
+                            String firstname = jsonobject.getString("firstname");
+                            String lastname = jsonobject.getString("lastname");
+                            String uid = jsonobject.getString("uid");
 
-                    JSONArray jsonarray = json.getJSONArray("users");
-                    for (int i = 0; i < jsonarray.length(); i++) {
-                        JSONObject jsonobject = jsonarray.getJSONObject(i);
-                        String firstname = jsonobject.getString("firstname");
-                        String lastname = jsonobject.getString("lastname");
-                        String uid = jsonobject.getString("uid");
+                            String tmp;
+                            tmp = firstname + " " + lastname;
+                            dataR.add(tmp);
+                            userIDs.add(uid);
+                            friends.put(tmp, uid);
 
-                        String tmp;
-                        tmp = firstname + " " + lastname;
-                        dataR.add(tmp);
-                        userIDs.add(uid);
-                        friends.put(tmp, uid);
+                            String name = jsonobject.getString("name");
+
+                            String hasimage = jsonobject.getString("hasimage");
+                            if (Integer.parseInt(hasimage) == 1) {
+                                String image = jsonobject.getString("image");
+                                byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
+                                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                                images.add(i, decodedByte);
+
+                            } else {
+                                images.add(i, null);
+                            }
+                        }
                     }
 
                     UserListAdapter.addAll(dataR);
