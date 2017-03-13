@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:descendantFocusability="blocksDescendants">
+
+    <ImageView
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:id="@+id/list_item_thumbnail_myfriends"
+        android:src="@drawable/ic_man"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/list_item_text_myfriends"
+        android:layout_toStartOf="@+id/list_item_text_myfriends" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This is row number 15"
+        android:id="@+id/list_item_text_myfriends"
+        android:layout_alignBottom="@+id/list_item_thumbnail_myfriends"
+        android:layout_centerHorizontal="true" />
+
+</RelativeLayout>
